@@ -1,0 +1,46 @@
+# The practice's own rules. The code reads this file: change the questions, hours, replies or emergency patterns
+# here, never in the code.
+clinic: Riverside Dental                # a made-up practice for the demo
+greeting: >-
+  Thanks for calling Riverside Dental. We're closed right now, but I can book you an appointment
+  or pass an urgent message to the on-call dentist. How can I help?
+
+# Asked one at a time, in this order, until each is known. Order matters: the AI fills fields top to bottom.
+required:
+  reason: What would you like the appointment for?
+  patient_name: Can I take your full name, please?
+optional:                               # picked up if the caller mentions it; never asked, never blocking
+  plan: Is that NHS or private?
+
+# Opening hours for bookings; 30-minute slots. Days not listed are closed.
+hours:
+  mon: "09:00-17:00"
+  tue: "09:00-17:00"
+  wed: "09:00-17:00"
+  thu: "09:00-19:00"                    # late opening
+  fri: "09:00-16:00"
+slot_minutes: 30
+
+# If any of these patterns (regular expressions, matched in lower case) appears in what the caller says, the call is
+# urgent: no booking, the urgent reply instead. Plain code checks them, so no AI answer can talk its way past them.
+# When in doubt this errs towards urgent: an unneeded callback costs a minute, a missed abscess costs far more.
+# This list is a starting point, not a medical triage tool: the practice must review it.
+emergency_patterns:
+  - swell|swollen|puff(ed|y)|lump
+  - breath|breathe|breathing          # "can't breathe", "difficulty breathing"
+  - swallow
+  - bleed|blood
+  - (severe|terrible|excruciating|unbearable|agoni[sz]ing|awful|worst) pain|pain is (severe|terrible|unbearable)
+  - knock\w*\b.{0,30}\bout|fell out|came out|broken jaw|broke my jaw|jaw is broken
+  - fever|temperature|abscess|infect
+  - unconscious|faint|passed out|chest pain|allergic|anaphyla
+
+# Only promise what the practice really does. The demo writes urgent calls to out/urgent.csv: connect that file to a
+# real alert (SMS, pager) before promising a callback time.
+emergency_reply: >-
+  That sounds urgent, so I'm not booking a normal appointment. If you have trouble breathing or swallowing, or
+  the swelling reaches your eye or neck, hang up and call 999 now. Otherwise, NHS 111 can give you urgent dental
+  advice tonight, and I've flagged your call as urgent for the on-call dentist.
+message_reply: >-
+  I can't do that over the phone tonight, but I've passed your message to the team for when we open.
+booked_reply: "Lovely{name}. You're booked in for {slot}. Goodbye!"

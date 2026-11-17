@@ -1,0 +1,10 @@
+{
+ "caller_id": "+44 7700 900123",
+ "time": "2026-11-16T19:42",
+ "voice": "bf_alice",
+ "script": [
+  "Hi, I'd like to book a check-up and a clean, please. It's been a while since I've seen a dentist.",
+  "It's Sarah Okafor. Ideally Thursday afternoon, if you have anything.",
+  "Yes, that's perfect, thank you."
+ ]
+}

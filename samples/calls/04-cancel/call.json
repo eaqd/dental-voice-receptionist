@@ -1,0 +1,8 @@
+{
+ "caller_id": "+44 7700 900321",
+ "time": "2026-11-16T19:58",
+ "voice": "af_heart",
+ "script": [
+  "Hi, I need to cancel my appointment on Wednesday. Something's come up at work."
+ ]
+}

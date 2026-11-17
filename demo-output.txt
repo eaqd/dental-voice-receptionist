@@ -1,0 +1,41 @@
+$ python receptionist.py call samples/calls/01-new-patient
+DESK    Thanks for calling Riverside Dental. We're closed right now, but I can book you an appointment or pass an urgent message to the on-call dentist. How can I help?
+CALLER  Hi, I'd like to book a checkup and a clean please. It's been a while since I've seen a dentist.
+DESK    Can I take your full name, please?
+CALLER  It's Sarah Ocalfa, ideally Thursday afternoon if you have anything.
+DESK    I can do Thursday 19 November at 2 pm. Would that work?
+CALLER  Yes, that's perfect. Thank you.
+DESK    Lovely, Sarah. You're booked in for Thursday 19 November at 2 pm. Goodbye!
+-- BOOKED Thursday 19 November at 2 pm | reason=checkup and clean, patient_name=Sarah Ocalfa, preferred_day=Thursday, preferred_time=afternoon
+-- per turn on this PC: hearing 2.3 s, AI reading 10.3 s, speaking 3.6 s
+
+$ python receptionist.py call samples/calls/02-emergency
+DESK    Thanks for calling Riverside Dental. We're closed right now, but I can book you an appointment or pass an urgent message to the on-call dentist. How can I help?
+CALLER  Hi sorry to call so late. My jaw is really swollen on one side and the pain is severe. I can't sleep.
+DESK    That sounds urgent, so I'm not booking a normal appointment. If you have trouble breathing or swallowing, or the swelling reaches your eye or neck, hang up and call 999 now. Otherwise, NHS 111 can give you urgent dental advice tonight, and I've flagged your call as urgent for the on-call dentist.
+-- URGENT | 
+-- per turn on this PC: hearing 3.2 s, AI reading 10.6 s, speaking 12.7 s
+
+$ python receptionist.py call samples/calls/03-change-time
+DESK    Thanks for calling Riverside Dental. We're closed right now, but I can book you an appointment or pass an urgent message to the on-call dentist. How can I help?
+CALLER  Hello, it's James Patel. I'm already a patient. I've lost a filling and I'd like it looked tomorrow if possible.
+DESK    I can do Tuesday 17 November at 10 am. Would that work?
+CALLER  mornings are tricky for me. Have you got anything after three?
+DESK    I can do Tuesday 17 November at 3 pm. Would that work?
+CALLER  Three o'clock is great. Thanks.
+DESK    Lovely, James. You're booked in for Tuesday 17 November at 3 pm. Goodbye!
+-- BOOKED Tuesday 17 November at 3 pm | reason=lost filling, patient_name=James Patel, preferred_day=tomorrow, preferred_time=after 3
+-- per turn on this PC: hearing 2.4 s, AI reading 10.9 s, speaking 3.4 s
+
+$ python receptionist.py call samples/calls/04-cancel
+DESK    Thanks for calling Riverside Dental. We're closed right now, but I can book you an appointment or pass an urgent message to the on-call dentist. How can I help?
+CALLER  Hi, I need to cancel my appointment on Wednesday. Some things come up at work.
+DESK    I can't do that over the phone tonight, but I've passed your message to the team for when we open.
+-- MESSAGE | reason=cancel appointment on Wednesday
+-- per turn on this PC: hearing 3.2 s, AI reading 10.4 s, speaking 3.4 s
+
+$ python receptionist.py report
+4 calls: 2 booked, 1 message, 1 urgent
+  booked  2026-11-19T14:00  Sarah Ocalfa (checkup and clean)
+  booked  2026-11-17T15:00  James Patel (lost filling)
+  URGENT  call back +44 7700 900456 (called 2026-11-16T21:15)

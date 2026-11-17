@@ -1,0 +1,7 @@
+pyyaml>=6
+numpy>=1.26
+faster-whisper>=1.1    # speech to text on the CPU
+kokoro-onnx>=0.4       # text to speech on the CPU (model files: see README)
+anthropic>=0.70        # only for AI_BACKEND=claude
+flask>=3               # only for the optional Twilio phone line (phone_twilio.py)
+pytest>=8              # tests
