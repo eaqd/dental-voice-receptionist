@@ -67,6 +67,7 @@ def test_more_times():
     assert desk.parse_time("12am") == (0.0, 0.5)
     assert desk.parse_time("at eight") == (8.0, 8.5)
     assert desk.parse_time("at 10") == (10.0, 10.5)
+    assert desk.parse_time("the earliest slot after school") == (15.0, 24.0)  # found by the caller simulator
 
 
 def test_closed_days_are_called_closed(tmp_path):

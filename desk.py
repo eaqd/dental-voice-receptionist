@@ -98,7 +98,8 @@ def parse_time(text: str) -> tuple[float, float] | None:
              or re.search(r"\bat\s+(\d{1,2})()()\b", t)):  # "10am", "2:30", "3 o'clock", "at 8"
         h = _hour(m.group(1), m.group(2), m.group(3) if m.group(3) in ("am", "pm") else None)
         return h, h + 0.5
-    for words, window in ((("morning",), (0, 12)), (("lunch",), (12, 14)), (("afternoon",), (12, 17)),
+    for words, window in ((("after school", "school run", "school pick"), (15, 24)),  # found by the caller simulator
+                          (("morning",), (0, 12)), (("lunch",), (12, 14)), (("afternoon",), (12, 17)),
                           (("evening", "after work"), (17, 24))):
         if any(w in t for w in words):
             return float(window[0]), float(window[1])
