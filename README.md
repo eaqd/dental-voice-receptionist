@@ -5,6 +5,9 @@
 > This is a full open build written from scratch: free tools, every line explained, patient data stays on the
 > computer. Use it, change it, sell it to a practice.
 
+**Watch it:** the 2-minute walkthrough, which opens with a real call, https://youtu.be/o1kXrJfd9RY and the
+33-second Short https://youtube.com/shorts/b-Ouwv85dRQ
+
 ## What you get
 
 A dental practice closes at five. After that the phone rings out: a new patient wants a check-up, someone has
