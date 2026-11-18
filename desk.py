@@ -215,6 +215,14 @@ def turn(call: Call, caller_text: str, got: dict, rules: dict, taken=(), reserve
         call.outcome = "message"  # not a new booking: a person handles it tomorrow
         call.fields = merge(call.fields, got)
         return say(call, rules["message_reply"])
+    # The AI sometimes misses a day or time wish ("a slot after school on any weekday": found by the caller
+    # simulator, tutorial 3). Plain code reads the caller's own words too, unless they only repeat our offer.
+    window, day = parse_time(caller_text), parse_day(caller_text, call.started)
+    at = call.offered.hour + call.offered.minute / 60 if call.offered else None
+    if not got.get("preferred_time") and window and not (at is not None and window[0] <= at < window[1]):
+        got["preferred_time"] = caller_text
+    if not got.get("preferred_day") and day and not (call.offered and day == call.offered.date()):
+        got["preferred_day"] = caller_text
     call.fields = merge(call.fields, got)
     taken = set(taken) | set(call.declined)
     # 2. An answer to the time we offered.
@@ -235,7 +243,8 @@ def turn(call: Call, caller_text: str, got: dict, rules: dict, taken=(), reserve
     if gaps:
         return say(call, rules["required"][gaps[0]])
     if call.offered:  # we offered a time and didn't hear a yes or a no
-        return say(call, f"Sorry, I didn't catch that. Would {spoken(call.offered)} work for you?")
+        return say(call, f"Sorry, I didn't catch that. Would {spoken(call.offered)} work, or is there a better "
+                         f"day or time?")
     # 4. Offer the best free slot. The calendar decides, never the AI.
     day = parse_day(call.fields.get("preferred_day", ""), call.started)
     window = parse_time(call.fields.get("preferred_time", ""))

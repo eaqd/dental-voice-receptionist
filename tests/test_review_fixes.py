@@ -152,3 +152,19 @@ def test_phone_line_needs_twilio_signature_and_logs_hangups(tmp_path, monkeypatc
     bye = web.post("/hangup", data={"CallSid": "CA9"}, headers={"X-Twilio-Signature": sign("/hangup", {"CallSid": "CA9"})})
     assert "<Hangup/>" in bye.get_data(as_text=True) and "CA9" not in phone_twilio.CALLS
     assert "hung up" in (tmp_path / "log.csv").read_text(encoding="utf-8")
+
+
+def test_code_catches_a_time_wish_the_ai_missed(tmp_path):
+    # found by the caller simulator: the AI read nothing from "I want a slot after school on any weekday", and the
+    # receptionist repeated the 10 am offer until the caller hung up
+    call = desk.Call("x", MONDAY_EVENING, fields={"reason": "check-up", "patient_name": "Leo Hart"},
+                     offered=datetime(2026, 11, 17, 10, 0), said="I can do Tuesday 17 November at 10 am. Would that work?")
+    reply = desk.turn(call, "I want a slot after school on any weekday.", BLANK, RULES, receptionist.taken(tmp_path))
+    assert reply == "I can do Tuesday 17 November at 3 pm. Would that work?"
+
+
+def test_repeating_our_own_offer_is_not_a_new_wish(tmp_path):
+    call = desk.Call("x", MONDAY_EVENING, fields={"reason": "check-up", "patient_name": "Leo Hart"},
+                     offered=datetime(2026, 11, 17, 15, 0), said="I can do Tuesday 17 November at 3 pm. Would that work?")
+    reply = desk.turn(call, "Three o'clock on Tuesday is great.", BLANK, RULES, receptionist.taken(tmp_path))
+    assert call.offered == datetime(2026, 11, 17, 15, 0) and "or is there a better day or time" in reply
