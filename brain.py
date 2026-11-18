@@ -28,8 +28,10 @@ def system_prompt(rules: dict) -> str:
 You get the receptionist's last line and what the caller said next. Fill each field only with what the caller
 says or clearly means. Never guess. Use an empty string for anything not said. Keep each value short: the key words
 the caller used ("broken crown", "whitening consultation"), not a whole sentence or small talk.
-- intent: book (wants an appointment, or is giving details for one), emergency (severe pain, swelling,
-  bleeding, an injury), change_or_cancel (an existing appointment), question, or other.
+- intent: book (wants an appointment, or is giving details for one; a chipped, cracked or broken tooth or a
+  lost filling without severe pain, swelling or bleeding is a booking), emergency (severe pain, swelling,
+  bleeding, a knocked-out tooth, a jaw or face injury, trouble breathing or swallowing), change_or_cancel (an
+  existing appointment), question, or other.
 {lines}
 - preferred_day: the day they ask for, in their words ("tomorrow", "Thursday", "next week"), else "".
 - preferred_time: the time they ask for, in their words ("afternoon", "after 3", "10am"), else "".
