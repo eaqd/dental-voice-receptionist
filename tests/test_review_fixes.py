@@ -168,3 +168,21 @@ def test_repeating_our_own_offer_is_not_a_new_wish(tmp_path):
                      offered=datetime(2026, 11, 17, 15, 0), said="I can do Tuesday 17 November at 3 pm. Would that work?")
     reply = desk.turn(call, "Three o'clock on Tuesday is great.", BLANK, RULES, receptionist.taken(tmp_path))
     assert call.offered == datetime(2026, 11, 17, 15, 0) and "or is there a better day or time" in reply
+
+
+@pytest.mark.parametrize("said, offered_at", [
+    ("Yes, that's fine, I can't do mornings anyway", datetime(2026, 11, 17, 15, 0)),
+    ("Yes, that works, I'll be there after work", datetime(2026, 11, 17, 15, 0))])
+def test_the_fallback_never_turns_down_a_yes(tmp_path, said, offered_at):
+    call = desk.Call("x", MONDAY_EVENING, fields={"reason": "check-up", "patient_name": "Ana"}, offered=offered_at,
+                     said="I can do Tuesday 17 November at 3 pm. Would that work?")
+    desk.turn(call, said, BLANK, RULES, receptionist.taken(tmp_path))
+    assert call.offered == offered_at  # still on the table (the AI's yes was missing, so we ask again)
+
+
+def test_the_fallback_ignores_descriptions():
+    call = desk.Call("x", MONDAY_EVENING)
+    desk.turn(call, "I chipped a tooth this morning and had my last clean on Tuesday", BLANK, RULES)
+    assert not call.fields.get("preferred_time") and not call.fields.get("preferred_day")
+    assert desk.parse_day("I sat too long", MONDAY_EVENING) is None
+    assert desk.parse_day("Tuesday is no good, how about Thursday", MONDAY_EVENING) == date(2026, 11, 19)

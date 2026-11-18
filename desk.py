@@ -7,11 +7,15 @@ from datetime import date, datetime, time, timedelta
 import yaml
 
 WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+WEEKDAY_WORDS = {w: i for i, name in enumerate(WEEKDAYS) for w in (name, name + "s")} | {
+    "mon": 0, "tue": 1, "tues": 1, "wed": 2, "weds": 2, "thu": 3, "thur": 3, "thurs": 3, "fri": 4}
 MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October",
           "November", "December"]
 NUMBER_WORDS = {w: str(i) for i, w in enumerate(
     "zero one two three four five six seven eight nine ten eleven twelve".split())}
 PREFERENCES = ("preferred_day", "preferred_time")  # a new wish replaces the old one; everything else fills gaps
+WISH = r"\b(want|wanted|prefer|rather|need it|can you do|could you do|how about|what about|anything|earliest|instead|better)\b"
+YES = r"\s*(yes|yeah|yep|ok|okay|sure|fine|great|perfect|lovely|that's fine|that works|that's great)\b"
 
 
 def load(path="clinic.yaml") -> dict:
@@ -55,10 +59,12 @@ def parse_day(text: str, now: datetime) -> date | None:
         except ValueError:  # "2026-13-45"
             return None
         return day if day >= today else None  # a date in the past is no wish we can meet
-    for word in re.findall(r"[a-z]+", t):
-        for i, name in enumerate(WEEKDAYS):
-            if len(word) >= 3 and name.startswith(word):
-                return today + timedelta(days=(i - today.weekday()) % 7 or 7)  # "Monday" on a Monday = next week
+    # Full names or the usual short forms; never "sat" or "sun" ("I sat too long" is no Saturday). If several are
+    # named, the last one counts: "Tuesday is no good, how about Thursday" means Thursday.
+    named = [WEEKDAY_WORDS[w] for w in re.findall(r"[a-z]+", t) if w in WEEKDAY_WORDS]
+    if named:
+        i = named[-1]
+        return today + timedelta(days=(i - today.weekday()) % 7 or 7)  # "Monday" on a Monday = next week
     if "next week" in t:
         return today + timedelta(days=7 - today.weekday())
     if m := re.search(r"\b(\d{1,2})(st|nd|rd|th)\b", t):
@@ -217,12 +223,15 @@ def turn(call: Call, caller_text: str, got: dict, rules: dict, taken=(), reserve
         return say(call, rules["message_reply"])
     # The AI sometimes misses a day or time wish ("a slot after school on any weekday": found by the caller
     # simulator, tutorial 3). Plain code reads the caller's own words too, unless they only repeat our offer.
-    window, day = parse_time(caller_text), parse_day(caller_text, call.started)
-    at = call.offered.hour + call.offered.minute / 60 if call.offered else None
-    if not got.get("preferred_time") and window and not (at is not None and window[0] <= at < window[1]):
-        got["preferred_time"] = caller_text
-    if not got.get("preferred_day") and day and not (call.offered and day == call.offered.date()):
-        got["preferred_day"] = caller_text
+    # Only for a clear wish ("I want...", "how about...", "anything after...") and never when the caller says yes.
+    lower = caller_text.lower()
+    if re.search(WISH, lower) and not re.match(YES, lower):
+        window, day = parse_time(caller_text), parse_day(caller_text, call.started)
+        at = call.offered.hour + call.offered.minute / 60 if call.offered else None
+        if not got.get("preferred_time") and window and not (at is not None and window[0] <= at < window[1]):
+            got["preferred_time"] = caller_text
+        if not got.get("preferred_day") and day and not (call.offered and day == call.offered.date()):
+            got["preferred_day"] = caller_text
     call.fields = merge(call.fields, got)
     taken = set(taken) | set(call.declined)
     # 2. An answer to the time we offered.
