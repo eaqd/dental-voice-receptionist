@@ -176,7 +176,7 @@ If the AI is late, the safety rules still run on the caller's words.
 
 ## What I tested, and what I didn't
 
-- `pytest`: 44 offline tests with a stand-in AI and stand-in ears and voice: reading days and times, the
+- `pytest`: 49 offline tests with a stand-in AI and stand-in ears and voice: reading days and times, the
   booking flow, a turned-down time, emergencies (words and AI), a slot taken mid-call, cancellations, echoes and
   invented details, the schema, the Claude request shape, a whole recorded call, the Twilio webhooks (Flask's test
   client), spreadsheet safety and `.env` parsing.
@@ -188,6 +188,16 @@ If the AI is late, the safety rules still run on the caller's words.
 - Not a medical device. The practice sets its own emergency patterns, wording and process. The receptionist only
   promises what the code does: urgent calls go to `out/urgent.csv`, so connect that to a real alert (SMS, pager)
   before promising a callback time.
+
+## Found later by fake callers
+
+The follow-up tutorial, a caller simulator (https://github.com/eaqd/voice-agent-caller-sim), phoned this
+receptionist with nine fake callers on a clean and a noisy phone line. It found four bugs the tests had missed:
+"after school" meant nothing (fixed); when the AI missed a time wish it repeated the same offer (fixed: plain code
+now reads clear day and time wishes from the caller's own words); on a noisy line "I've chipped a tooth" became an
+emergency (fixed: the AI's instructions follow ordinary dental triage); and when noise swallows most of an angry
+caller's words, the AI can call it an emergency (open, and on the safe side). The four demo calls above give the
+same results with the fixes.
 
 ## What a fresh review found before release
 
