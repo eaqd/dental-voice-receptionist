@@ -15,6 +15,7 @@ NUMBER_WORDS = {w: str(i) for i, w in enumerate(
     "zero one two three four five six seven eight nine ten eleven twelve".split())}
 PREFERENCES = ("preferred_day", "preferred_time")  # a new wish replaces the old one; everything else fills gaps
 WISH = r"\b(want|wanted|prefer|rather|need it|can you do|could you do|how about|what about|anything|earliest|instead|better)\b"
+NEGATED_WISH = re.compile(r"\b(?:no|not|never|cannot|\w+n't|avoid|bad for me)\b")
 YES = r"\s*(yes|yeah|yep|ok|okay|sure|fine|great|perfect|lovely|that's fine|that works|that's great)\b"
 
 
@@ -170,7 +171,15 @@ def _words(text: str) -> set:
     return {w for w in re.findall(r"[a-z0-9']+", text) if (w.isdigit() or len(w) >= 3) and w not in FILLER}
 
 
-def drop_echoes(got: dict, rules: dict, said: str, heard: str = "") -> dict:
+def positive_wishes(text: str) -> str:
+    lower = text.lower().replace("’", "'").replace("a.m.", "am").replace("p.m.", "pm")
+    if not NEGATED_WISH.search(lower):
+        return text
+    clauses = re.split(r"[.,?!;]|\bbut\b|\band\s+(?=i\b|would\b)", lower)
+    return " ".join(clause for clause in clauses if not NEGATED_WISH.search(clause))
+
+
+def drop_echoes(got: dict, rules: dict, said: str, heard: str = "", wishes: str | None = None) -> dict:
     """Check the AI's reading against what was actually said. A small model sometimes:
     - copies OUR question from clinic.yaml into a field as if it were the answer (seen on the first real run);
     - writes "none" instead of leaving a field empty;
@@ -178,11 +187,14 @@ def drop_echoes(got: dict, rules: dict, said: str, heard: str = "") -> dict:
       caller's new wish). So optional details and day/time wishes only count if the caller said a word of them."""
     questions = {q.strip().lower() for q in {**rules["required"], **rules.get("optional", {})}.values()}
     grounded = set(PREFERENCES) | set(rules.get("optional", {}))
+    rejected = _words(heard) - _words(wishes) if wishes is not None and wishes != heard else set()
     out = {}
     for k, v in got.items():
+        source = wishes if k in PREFERENCES and wishes is not None else heard
         if isinstance(v, str) and (
                 v.lower() in questions or v.lower() in ("none", "n/a", "unknown", "not mentioned")
-                or (k in grounded and v and not _words(v) & _words(heard))):
+                or (k in grounded and v and not _words(v) & _words(source))
+                or (k in PREFERENCES and _words(v) & rejected)):
             v = ""
         out[k] = v
     return out
@@ -211,7 +223,8 @@ def turn(call: Call, caller_text: str, got: dict, rules: dict, taken=(), reserve
     `reserve(slot)` writes the booking and returns False if someone else got the slot first."""
     if not (caller_text or "").strip():  # silence or a failed hearing: never act on it, just ask again
         return say(call, "Sorry, I didn't catch that. Could you say it again?")
-    got = drop_echoes(clean(got), rules, call.said, caller_text)
+    wishes = positive_wishes(caller_text)
+    got = drop_echoes(clean(got), rules, call.said, caller_text, wishes)
     intent, answer = got.pop("intent", "other"), got.pop("answer_to_offer", "none")
     # 1. Safety first, before anything else.
     if is_emergency(caller_text, rules, intent):
@@ -224,14 +237,13 @@ def turn(call: Call, caller_text: str, got: dict, rules: dict, taken=(), reserve
     # The AI sometimes misses a day or time wish ("a slot after school on any weekday": found by the caller
     # simulator, tutorial 3). Plain code reads the caller's own words too, unless they only repeat our offer.
     # Only for a clear wish ("I want...", "how about...", "anything after...") and never when the caller says yes.
-    lower = caller_text.lower()
-    if re.search(WISH, lower) and not re.match(YES, lower):
-        window, day = parse_time(caller_text), parse_day(caller_text, call.started)
+    if re.search(WISH, wishes, re.I) and not re.match(YES, caller_text.lower()):
+        window, day = parse_time(wishes), parse_day(wishes, call.started)
         at = call.offered.hour + call.offered.minute / 60 if call.offered else None
         if not got.get("preferred_time") and window and not (at is not None and window[0] <= at < window[1]):
-            got["preferred_time"] = caller_text
+            got["preferred_time"] = wishes
         if not got.get("preferred_day") and day and not (call.offered and day == call.offered.date()):
-            got["preferred_day"] = caller_text
+            got["preferred_day"] = wishes
     call.fields = merge(call.fields, got)
     taken = set(taken) | set(call.declined)
     # 2. An answer to the time we offered.

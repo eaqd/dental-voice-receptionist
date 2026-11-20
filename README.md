@@ -176,7 +176,7 @@ If the AI is late, the safety rules still run on the caller's words.
 
 ## What I tested, and what I didn't
 
-- `pytest`: 49 offline tests with a stand-in AI and stand-in ears and voice: reading days and times, the
+- `pytest`: 54 offline tests with a stand-in AI and stand-in ears and voice: reading days and times, the
   booking flow, a turned-down time, emergencies (words and AI), a slot taken mid-call, cancellations, echoes and
   invented details, the schema, the Claude request shape, a whole recorded call, the Twilio webhooks (Flask's test
   client), spreadsheet safety and `.env` parsing.
